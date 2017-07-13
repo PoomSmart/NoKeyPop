@@ -1,0 +1,9 @@
+Package: org.thebigboss.nokeypop
+Name: NoKeyPop
+Depends: mobilesubstrate, preferenceloader, firmware (>= 5.0), firmware (<< 9.0)
+Version: 1.0
+Architecture: iphoneos-arm
+Description: Remove popup above keyboard characters.
+Maintainer: PoomSmart
+Author: PoomSmart
+Section: Tweaks
