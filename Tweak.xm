@@ -1,10 +1,13 @@
 #define CHECK_TARGET
-#import "../PS.h"
-#import "../PSPrefs.x"
-#import <UIKit/UIKeyboardImpl.h>
-#import <UIKit/UIKBRenderFactoryiPhone.h>
-#import <UIKit/UIKBRenderConfig.h>
+#import <PSHeader/PS.h>
+#import "../../PSPrefs/PSPrefs.x"
+#import <TextInput/TIKeyboardLayoutFactory.h> // What happened, Theos?
 #import <UIKit/UIKBKeyView.h>
+#import <UIKit/UIKBRenderConfig.h>
+#import <UIKit/UIKBRenderFactoryiPhone.h>
+#import <UIKit/UIKeyboardImpl.h>
+#import <dlfcn.h>
+#import <version.h>
 
 BOOL override;
 BOOL override2;
@@ -12,8 +15,8 @@ BOOL override3;
 
 BOOL enabled;
 BOOL highlight;
-NSUInteger popupState = isiOS7Up ? 4 : 1;
-NSUInteger normalState = isiOS7Up ? 2 : 4;
+NSUInteger popupState = IS_IOS_OR_NEWER(iOS_7_0) ? 4 : 1;
+NSUInteger normalState = IS_IOS_OR_NEWER(iOS_7_0) ? 2 : 4;
 
 static BOOL stringKey(UIKBTree *key) {
     BOOL string = NO;
@@ -75,7 +78,7 @@ static BOOL stringKey(UIKBTree *key) {
 
 %hook UIKBKeyView
 
-- (void)drawRect: (CGRect)rect {
+- (void)drawRect:(CGRect)rect {
     override = enabled && stringKey(MSHookIvar<UIKBTree *>(self, "m_key")) && highlight;
     %orig;
     override = NO;
@@ -143,7 +146,7 @@ BOOL (*UIKBKeyDrawsOwnBackground)(UIKBTree *, UIKBTree *, NSInteger);
 
 %hook UIKBKeyView
 
-- (void)drawRect: (CGRect)rect {
+- (void)drawRect:(CGRect)rect {
     override = self.state == popupState;
     %orig;
     override = NO;
@@ -178,22 +181,20 @@ BOOL (*UIKBKeyDrawsOwnBackground)(UIKBTree *, UIKBTree *, NSInteger);
 %end
 
 static NSString const *tweakIdentifier = @"com.PS.NoKeyPop";
-static NSString const *enabledKey = @"enabled";
-static NSString const *highlightKey = @"highlight";
 
 HaveCallback() {
-    GetPrefs()
-    GetBool2(enabled, YES)
-    GetBool2(highlight, YES)
+    GetPrefs();
+    GetBool(enabled, @"enabled", YES);
+    GetBool(highlight, @"highlight", YES);
 }
 
 %ctor {
-    if (isTarget(TargetTypeGUI)) {
+    if (isTarget(TargetTypeApps)) {
         HaveObserver();
         callback();
         dlopen("/Library/MobileSubstrate/DynamicLibraries/Vintage.dylib", RTLD_LAZY);
         %init;
-        if (isiOS7Up) {
+        if (IS_IOS_OR_NEWER(iOS_7_0)) {
             %init(iOS7Up);
         } else {
             MSImageRef ref = MSGetImageByName("/System/Library/Frameworks/UIKit.framework/UIKit");
